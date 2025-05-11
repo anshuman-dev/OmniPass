@@ -3,45 +3,455 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cross-Chain Credential Passport</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <title>Credential Passport</title>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #0A0A0A;
+      color: #F2F2F2;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .header {
+      background-color: #0A0A0A;
+      padding: 1rem;
+      border-bottom: 1px solid #272727;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    .flex-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo img {
+      width: 40px;
+      height: 40px;
+      margin-right: 1rem;
+    }
+    
+    .logo h1 {
+      font-size: 1.5rem;
+      font-weight: 400;
+    }
+    
+    .btn {
+      background-color: #6CADF5;
+      color: #0A0A0A;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    
+    .btn:hover {
+      background-color: #5b99d9;
+    }
+    
+    .card {
+      background-color: #161616;
+      border-radius: 8px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .status {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #272727;
+      border-radius: 4px;
+    }
+    
+    .error {
+      color: #F56868;
+    }
+    
+    .success {
+      color: #8AE06C;
+    }
+    
+    .log {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #0A0A0A;
+      border: 1px solid #272727;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+    
+    .nav-link {
+      color: #757575;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+    
+    .nav-link:hover, .nav-link.active {
+      color: #F2F2F2;
+    }
+  </style>
 </head>
 <body>
   <header class="header">
-    <div class="container">
+    <div class="container flex-container">
       <div class="logo">
-        <img src="images/layerzero-logo.svg" alt="LayerZero Logo" class="logo-img">
+        <div style="width: 40px; height: 40px; background-color: #F2F2F2; border-radius: 50%; margin-right: 1rem;"></div>
         <h1>Credential Passport</h1>
       </div>
-      <nav class="nav">
-        <ul class="nav-list">
-          <li><a href="#" class="nav-link active" data-page="home">Home</a></li>
-          <li><a href="#" class="nav-link" data-page="create-passport">Create Passport</a></li>
-          <li><a href="#" class="nav-link" data-page="add-credential">Add Credential</a></li>
-          <li><a href="#" class="nav-link" data-page="verify-access">Verify Access</a></li>
-          <li><a href="#" class="nav-link" data-page="history">History</a></li>
-        </ul>
-      </nav>
-      <div class="wallet-connect">
-        <button id="connect-wallet" class="btn btn-primary">Connect Wallet</button>
+      <div class="nav-links">
+        <a href="#" class="nav-link active" data-page="home">HOME</a>
+        <a href="#" class="nav-link" data-page="create">CREATE PASSPORT</a>
+        <a href="#" class="nav-link" data-page="add">ADD CREDENTIAL</a>
+        <a href="#" class="nav-link" data-page="verify">VERIFY ACCESS</a>
+        <a href="#" class="nav-link" data-page="history">HISTORY</a>
       </div>
+      <button id="connect-wallet" class="btn">CONNECT WALLET</button>
     </div>
   </header>
 
-  <main class="main">
-    <div class="container">
-      <div id="page-content"></div>
+  <main class="container">
+    <div id="page-content">
+      <div class="card">
+        <h2>Connect your wallet</h2>
+        <p>Please connect your wallet to get started with Credential Passport.</p>
+        <button id="connect-btn" class="btn">Connect Wallet</button>
+      </div>
+      
+      <div id="status" class="status" style="display: none;">
+        <p id="status-message"></p>
+      </div>
+      
+      <div class="log" id="log-output"></div>
     </div>
   </main>
 
-  <footer class="footer">
-    <div class="container">
-      <p>Powered by <a href="https://layerzero.network" target="_blank">LayerZero</a> - The Omnichain Interoperability Protocol</p>
-    </div>
-  </footer>
-
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
-  <script type="module" src="js/app.js"></script>
+  <script>
+    // DOM Elements
+    const connectWalletBtn = document.getElementById('connect-wallet');
+    const connectBtn = document.getElementById('connect-btn');
+    const statusDiv = document.getElementById('status');
+    const statusMessage = document.getElementById('status-message');
+    const logOutput = document.getElementById('log-output');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const pageContent = document.getElementById('page-content');
+    
+    // App state
+    let walletConnected = false;
+    let walletAddress = null;
+    let walletChainId = null;
+    
+    // Log function
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      logOutput.innerHTML += `[${timestamp}] ${message}\n`;
+      console.log(message);
+    }
+    
+    // Show status message
+    function showStatus(message, isError = false) {
+      statusDiv.style.display = 'block';
+      statusMessage.textContent = message;
+      statusMessage.className = isError ? 'error' : 'success';
+    }
+    
+    // Initialize the app
+    function init() {
+      log('Initializing app...');
+      
+      // Check if MetaMask is installed
+      if (typeof window.ethereum !== 'undefined') {
+        log('MetaMask is installed!');
+        
+        // Check if already connected
+        window.ethereum
+          .request({ method: 'eth_accounts' })
+          .then(handleAccountsChanged)
+          .catch(err => {
+            log(`Error checking accounts: ${err.message}`);
+          });
+        
+        // Setup event listeners
+        window.ethereum.on('accountsChanged', handleAccountsChanged);
+        window.ethereum.on('chainChanged', handleChainChanged);
+      } else {
+        log('MetaMask is not installed');
+        showStatus('MetaMask not installed. Please install MetaMask to use this application.', true);
+      }
+      
+      // Setup event listeners
+      connectWalletBtn.addEventListener('click', connectWallet);
+      connectBtn.addEventListener('click', connectWallet);
+      
+      // Setup navigation
+      navLinks.forEach(link => {
+        link.addEventListener('click', handleNavigation);
+      });
+    }
+    
+    // Handle accounts changed
+    function handleAccountsChanged(accounts) {
+      if (accounts.length === 0) {
+        // User disconnected
+        log('No accounts found / User disconnected');
+        walletConnected = false;
+        walletAddress = null;
+        connectWalletBtn.textContent = 'CONNECT WALLET';
+        showStatus('Wallet disconnected', true);
+      } else {
+        // User connected
+        walletAddress = accounts[0];
+        walletConnected = true;
+        log(`Connected wallet: ${walletAddress}`);
+        connectWalletBtn.textContent = `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`;
+        showStatus('Wallet connected successfully!');
+        
+        // Get current chain
+        window.ethereum
+          .request({ method: 'eth_chainId' })
+          .then(handleChainChanged)
+          .catch(err => {
+            log(`Error getting chain ID: ${err.message}`);
+          });
+      }
+    }
+    
+    // Handle chain changed
+    function handleChainChanged(chainIdHex) {
+      walletChainId = parseInt(chainIdHex, 16);
+      log(`Chain changed to: ${walletChainId}`);
+      
+      let chainName = 'Unknown Network';
+      switch (walletChainId) {
+        case 1:
+          chainName = 'Ethereum Mainnet';
+          break;
+        case 11155111:
+          chainName = 'Ethereum Sepolia';
+          break;
+        case 421613:
+          chainName = 'Arbitrum Goerli';
+          break;
+        case 84531:
+          chainName = 'Base Goerli';
+          break;
+      }
+      
+      log(`Current network: ${chainName}`);
+    }
+    
+    // Connect wallet
+    async function connectWallet() {
+      if (typeof window.ethereum === 'undefined') {
+        showStatus('MetaMask not installed. Please install MetaMask to use this application.', true);
+        return;
+      }
+      
+      try {
+        log('Requesting accounts...');
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        handleAccountsChanged(accounts);
+      } catch (error) {
+        if (error.code === 4001) {
+          // User rejected request
+          log('User rejected wallet connection');
+          showStatus('Connection rejected. Please approve the connection request in MetaMask.', true);
+        } else {
+          log(`Wallet connection error: ${error.message}`);
+          showStatus(`Error connecting wallet: ${error.message}`, true);
+        }
+      }
+    }
+    
+    // Handle navigation
+    function handleNavigation(e) {
+      e.preventDefault();
+      
+      // Update active link
+      navLinks.forEach(link => link.classList.remove('active'));
+      e.target.classList.add('active');
+      
+      // Get page
+      const page = e.target.getAttribute('data-page');
+      log(`Navigating to page: ${page}`);
+      
+      // Simple page routing
+      switch (page) {
+        case 'home':
+          loadHomePage();
+          break;
+        case 'create':
+          loadCreatePage();
+          break;
+        case 'add':
+          loadAddCredentialPage();
+          break;
+        case 'verify':
+          loadVerifyPage();
+          break;
+        case 'history':
+          loadHistoryPage();
+          break;
+        default:
+          loadHomePage();
+      }
+    }
+    
+    // Load home page
+    function loadHomePage() {
+      pageContent.innerHTML = `
+        <div class="card">
+          <h2>Cross-Chain Credential Passport</h2>
+          <p>Welcome to the Credential Passport system, powered by LayerZero!</p>
+          
+          <div style="margin-top: 1.5rem;">
+            <h3>About</h3>
+            <p>The Cross-Chain Credential Passport allows you to maintain a unified digital identity across multiple blockchains.</p>
+          </div>
+          
+          <button id="get-started-btn" class="btn" style="margin-top: 1.5rem;">Get Started</button>
+        </div>
+      `;
+      
+      // Add event listener to the Get Started button
+      document.getElementById('get-started-btn').addEventListener('click', () => {
+        // Navigate to create passport page
+        document.querySelector('.nav-link[data-page="create"]').click();
+      });
+    }
+    
+    // Load create passport page
+    function loadCreatePage() {
+      if (!walletConnected) {
+        pageContent.innerHTML = `
+          <div class="card">
+            <h2>Create Your Credential Passport</h2>
+            <p>Please connect your wallet first to create a passport.</p>
+            <button id="connect-page-btn" class="btn">Connect Wallet</button>
+          </div>
+        `;
+        
+        document.getElementById('connect-page-btn').addEventListener('click', connectWallet);
+      } else {
+        pageContent.innerHTML = `
+          <div class="card">
+            <h2>Create Your Credential Passport</h2>
+            <p>Your credential passport is a digital identity that works across multiple blockchains.</p>
+            
+            <div style="margin-top: 1.5rem;">
+              <label>Select Chain</label>
+              <select id="chain-select" style="display: block; width: 100%; padding: 0.5rem; margin-top: 0.5rem; background-color: #0A0A0A; color: #F2F2F2; border: 1px solid #272727; border-radius: 4px;">
+                <option value="">Select a chain</option>
+                <option value="11155111">Ethereum Sepolia</option>
+                <option value="421613">Arbitrum Goerli</option>
+                <option value="84531">Base Goerli</option>
+              </select>
+              <p style="font-size: 0.8rem; color: #757575; margin-top: 0.5rem;">This is the chain where your passport will be initially created.</p>
+            </div>
+            
+            <button id="create-passport-btn" class="btn" style="margin-top: 1.5rem; width: 100%;" disabled>Create Passport</button>
+          </div>
+        `;
+        
+        // Setup chain selection handling
+        const chainSelect = document.getElementById('chain-select');
+        const createButton = document.getElementById('create-passport-btn');
+        
+        chainSelect.addEventListener('change', () => {
+          createButton.disabled = !chainSelect.value;
+        });
+        
+        // Setup creation button
+        createButton.addEventListener('click', async () => {
+          const chainId = chainSelect.value;
+          if (!chainId) return;
+          
+          try {
+            // Check if we need to switch chains
+            if (walletChainId !== parseInt(chainId)) {
+              log(`Switching from chain ${walletChainId} to ${chainId}`);
+              
+              try {
+                await window.ethereum.request({
+                  method: 'wallet_switchEthereumChain',
+                  params: [{ chainId: `0x${parseInt(chainId).toString(16)}` }],
+                });
+                
+                // Chain switched successfully
+                log(`Switched to chain ${chainId}`);
+              } catch (switchError) {
+                // This error code indicates that the chain has not been added to MetaMask
+                if (switchError.code === 4902) {
+                  log(`Chain ${chainId} not added to MetaMask`);
+                  alert(`Chain ${chainId} not added to MetaMask. Please add it manually.`);
+                } else {
+                  throw switchError;
+                }
+              }
+            }
+            
+            // Mock creating passport
+            log(`Creating passport on chain ${chainId}`);
+            alert(`This would create a passport on chain ${chainId} in a real implementation`);
+          } catch (error) {
+            log(`Error creating passport: ${error.message}`);
+            showStatus(`Error creating passport: ${error.message}`, true);
+          }
+        });
+      }
+    }
+    
+    // Load add credential page (placeholder)
+    function loadAddCredentialPage() {
+      pageContent.innerHTML = `
+        <div class="card">
+          <h2>Add Credential</h2>
+          <p>This feature will be implemented soon.</p>
+        </div>
+      `;
+    }
+    
+    // Load verify page (placeholder)
+    function loadVerifyPage() {
+      pageContent.innerHTML = `
+        <div class="card">
+          <h2>Verify Access</h2>
+          <p>This feature will be implemented soon.</p>
+        </div>
+      `;
+    }
+    
+    // Load history page (placeholder)
+    function loadHistoryPage() {
+      pageContent.innerHTML = `
+        <div class="card">
+          <h2>Transaction History</h2>
+          <p>This feature will be implemented soon.</p>
+        </div>
+      `;
+    }
+    
+    // Initialize app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 </body>
 </html>

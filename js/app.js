@@ -5,6 +5,7 @@ import AddCredentialPage from './pages/add-credential.js';
 import VerifyAccessPage from './pages/verify-access.js';
 import TransactionHistoryPage from './pages/transaction-history.js';
 import { initWeb3, connectWallet, getAccount, getChainId } from './utils/web3.js';
+import { initDebug } from './utils/debug.js';
 
 // Page components
 const pages = {
@@ -26,15 +27,30 @@ let walletConnected = false;
 
 // Initialize the app
 async function initApp() {
-  await initWeb3();
-  renderCurrentPage();
-  addEventListeners();
+  // Initialize debug mode
+  initDebug();
   
-  // Check if already connected
-  const account = await getAccount();
-  if (account) {
-    walletConnected = true;
-    updateConnectButton(account);
+  console.log('Initializing app...');
+  
+  if (typeof ethers === 'undefined') {
+    console.error('Ethers.js is not loaded. App initialization failed.');
+    alert('Required libraries not loaded. Please refresh the page and try again.');
+    return;
+  }
+  
+  try {
+    await initWeb3();
+    renderCurrentPage();
+    addEventListeners();
+    
+    // Check if already connected
+    const account = await getAccount();
+    if (account) {
+      walletConnected = true;
+      updateConnectButton(account);
+    }
+  } catch (error) {
+    console.error('Error initializing app:', error);
   }
 }
 
@@ -52,14 +68,27 @@ async function renderCurrentPage() {
     return;
   }
 
-  // Clear current content
-  pageContent.innerHTML = '';
-  
-  // Create page instance
-  const page = new pages[currentPage](pageContent);
-  
-  // Render page
-  await page.render();
+  try {
+    // Clear current content
+    pageContent.innerHTML = '';
+    
+    // Create page instance
+    const page = new pages[currentPage](pageContent);
+    
+    // Render page
+    await page.render();
+  } catch (error) {
+    console.error(`Error rendering page ${currentPage}:`, error);
+    pageContent.innerHTML = `
+      <div class="card">
+        <h2 class="card-title">Error</h2>
+        <div class="alert alert-error">
+          <p>An error occurred while loading this page. Please try again.</p>
+          <p class="text-tertiary" style="font-size: 0.8rem;">${error.message}</p>
+        </div>
+      </div>
+    `;
+  }
 }
 
 // Add event listeners
@@ -86,8 +115,10 @@ function addEventListeners() {
     connectButton.addEventListener('click', async () => {
       if (!walletConnected) {
         try {
+          console.log('Connecting wallet...');
           const account = await connectWallet();
           if (account) {
+            console.log('Connected to account:', account);
             walletConnected = true;
             updateConnectButton(account);
             
@@ -104,4 +135,9 @@ function addEventListeners() {
 }
 
 // Initialize the app when the DOM is loaded
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, initializing app...');
+  
+  // Delay initialization slightly to ensure all scripts are loaded
+  setTimeout(initApp, 100);
+});

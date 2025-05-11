@@ -3,9 +3,24 @@ let provider = null;
 let signer = null;
 
 /**
+ * Check if ethers is properly loaded
+ */
+function checkEthersAvailable() {
+  if (typeof ethers === 'undefined') {
+    console.error('Ethers.js library is not loaded');
+    alert('Required libraries not loaded. Please refresh the page and try again.');
+    return false;
+  }
+  return true;
+}
+
+/**
  * Initialize Web3 providers
  */
 export async function initWeb3() {
+  // First check if ethers is loaded
+  if (!checkEthersAvailable()) return false;
+  
   if (window.ethereum) {
     try {
       // Just initialize provider without requesting accounts yet
@@ -36,6 +51,9 @@ export async function initWeb3() {
  * Connect wallet with proper error handling
  */
 export async function connectWallet() {
+  // First check if ethers is loaded
+  if (!checkEthersAvailable()) return null;
+  
   if (!window.ethereum) {
     // Display a more user-friendly error
     alert('No Ethereum wallet detected. Please install MetaMask from metamask.io');
@@ -45,8 +63,7 @@ export async function connectWallet() {
   try {
     // Request account access with proper options
     const accounts = await window.ethereum.request({ 
-      method: 'eth_requestAccounts',
-      params: [{ eth_accounts: {} }]
+      method: 'eth_requestAccounts'
     });
     
     if (accounts.length > 0) {
@@ -90,7 +107,7 @@ function updateConnectButtonText(account) {
  * Get the current account address
  */
 export async function getAccount() {
-  if (!provider) return null;
+  if (!checkEthersAvailable() || !provider) return null;
   
   try {
     const accounts = await provider.listAccounts();
@@ -105,7 +122,7 @@ export async function getAccount() {
  * Get the current chain ID
  */
 export async function getChainId() {
-  if (!provider) return null;
+  if (!checkEthersAvailable() || !provider) return null;
   
   try {
     const network = await provider.getNetwork();
@@ -120,6 +137,8 @@ export async function getChainId() {
  * Switch to a different chain
  */
 export async function switchChain(chainId) {
+  if (!checkEthersAvailable()) return false;
+  
   if (!window.ethereum) {
     throw new Error('No Ethereum wallet detected');
   }
@@ -199,6 +218,8 @@ async function addChain(chainId) {
  * Sign and send a transaction
  */
 export async function signTransaction(txData) {
+  if (!checkEthersAvailable()) return null;
+  
   if (!signer) {
     throw new Error('Wallet not connected');
   }
@@ -263,6 +284,7 @@ function handleChainChanged(chainIdHex) {
  * Get provider instance
  */
 export function getProvider() {
+  if (!checkEthersAvailable()) return null;
   return provider;
 }
 
@@ -270,5 +292,6 @@ export function getProvider() {
  * Get signer instance
  */
 export function getSigner() {
+  if (!checkEthersAvailable()) return null;
   return signer;
 }
