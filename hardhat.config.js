@@ -1,49 +1,28 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config();
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "0000000000000000000000000000000000000000000000000000000000000000";
-
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: {
-    version: "0.8.17",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      }
-    }
-  },
+  solidity: "0.8.17",
   networks: {
     // Ethereum Sepolia
     sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY_SEPOLIA}`,
-      accounts: [PRIVATE_KEY]
+      url: process.env.SEPOLIA_RPC_URL || "",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     // Arbitrum Goerli
     arbitrumGoerli: {
-      url: `https://arb-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY_ARBITRUM_GOERLI}`,
-      accounts: [PRIVATE_KEY]
+      url: process.env.ARBITRUM_GOERLI_RPC_URL || "",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
     // Base Goerli
     baseGoerli: {
-      url: `https://base-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY_BASE_GOERLI}`,
-      accounts: [PRIVATE_KEY]
-    }
+      url: process.env.BASE_GOERLI_RPC_URL || "",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
   },
   etherscan: {
-    apiKey: {
-      sepolia: process.env.ETHERSCAN_API_KEY,
-      arbitrumGoerli: process.env.ARBISCAN_API_KEY,
-      baseGoerli: process.env.BASESCAN_API_KEY
-    }
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
-  paths: {
-    sources: "./contracts",
-    tests: "./test",
-    cache: "./cache",
-    artifacts: "./artifacts"
-  }
 };

@@ -1,23 +1,50 @@
 # Node modules
 node_modules/
+npm-debug.log
 
-# Python virtual environment
-venv/
+# Python
 __pycache__/
-
-# Environment variables
-.env
-
-# Build files
-dist/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 build/
-
-# OS files
-.DS_Store
-Thumbs.db
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.env
 
 # IDE files
 .idea/
 .vscode/
-*.sublime-project
-*.sublime-workspace
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Contract artifacts
+artifacts/
+cache/
