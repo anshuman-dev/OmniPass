@@ -7,7 +7,8 @@ const identityPassportABI = [
   "function isVerified(address _user) external view returns (bool)",
   "function verifyUser(address _user) external",
   "function propagateVerification(address _user, uint32 _dstEid, bytes calldata _options) external payable",
-  "function owner() external view returns (address)"
+  "function owner() external view returns (address)",
+  "function quotePropagateFee(uint32 _dstEid, bytes calldata _options) external view returns (tuple(uint256 nativeFee, uint256 lzTokenFee))"
 ];
 
 const simpleIdentityPassportABI = [
@@ -133,95 +134,95 @@ function App() {
   };
 
   // Check verification status on both chains
-  // Check verification status on both chains
-const checkVerificationStatus = async (userAddress) => {
-  if (!userAddress) return;
-  
-  setLoading(true);
-  setStatusMessage("Checking verification status...");
-  
-  try {
-    console.log("Starting verification check for address:", userAddress);
+  const checkVerificationStatus = async (userAddress) => {
+    if (!userAddress) return;
     
-    // Create providers for each chain
-    const baseSepoliaProvider = new ethers.providers.JsonRpcProvider(
-      "https://sepolia.base.org"
-    );
-    
-    const ethereumSepoliaProvider = new ethers.providers.JsonRpcProvider(
-      "https://rpc.sepolia.org"
-    );
-    
-    console.log("Created providers");
-    
-    // Create contract instances
-    const baseSepoliaContract = new ethers.Contract(
-      BASE_SEPOLIA_CONTRACT,
-      identityPassportABI,
-      baseSepoliaProvider
-    );
-    
-    const ethereumSepoliaContract = new ethers.Contract(
-      ETHEREUM_SEPOLIA_CONTRACT,
-      simpleIdentityPassportABI,
-      ethereumSepoliaProvider
-    );
-    
-    console.log("Created contract instances");
-    console.log("Base Sepolia Contract Address:", BASE_SEPOLIA_CONTRACT);
-    console.log("Ethereum Sepolia Contract Address:", ETHEREUM_SEPOLIA_CONTRACT);
+    setLoading(true);
+    setStatusMessage("Checking verification status...");
     
     try {
-      // Check verification status on Base Sepolia
-      console.log("Checking Base Sepolia verification...");
-      const isVerifiedOnBaseSepolia = await baseSepoliaContract.isVerified(userAddress);
-      console.log("Base Sepolia verification status:", isVerifiedOnBaseSepolia);
+      console.log("Starting verification check for address:", userAddress);
       
-      // Check if the user is the owner on Base Sepolia
-      const baseSepoliaOwner = await baseSepoliaContract.owner();
-      console.log("Base Sepolia owner:", baseSepoliaOwner);
-      console.log("User address:", userAddress);
-      const isBaseSepoliaOwner = baseSepoliaOwner.toLowerCase() === userAddress.toLowerCase();
-      console.log("Is Base Sepolia owner:", isBaseSepoliaOwner);
+      // Create providers for each chain
+      const baseSepoliaProvider = new ethers.providers.JsonRpcProvider(
+        "https://sepolia.base.org"
+      );
       
-      setBaseSepolia(prev => ({
-        ...prev,
-        isVerified: isVerifiedOnBaseSepolia,
-        isOwner: isBaseSepoliaOwner
-      }));
+      // Using a different provider for Ethereum Sepolia to resolve the connectivity issues
+      const ethereumSepoliaProvider = new ethers.providers.JsonRpcProvider(
+        "https://ethereum-sepolia.publicnode.com"
+      );
+      
+      console.log("Created providers");
+      
+      // Create contract instances
+      const baseSepoliaContract = new ethers.Contract(
+        BASE_SEPOLIA_CONTRACT,
+        identityPassportABI,
+        baseSepoliaProvider
+      );
+      
+      const ethereumSepoliaContract = new ethers.Contract(
+        ETHEREUM_SEPOLIA_CONTRACT,
+        simpleIdentityPassportABI,
+        ethereumSepoliaProvider
+      );
+      
+      console.log("Created contract instances");
+      console.log("Base Sepolia Contract Address:", BASE_SEPOLIA_CONTRACT);
+      console.log("Ethereum Sepolia Contract Address:", ETHEREUM_SEPOLIA_CONTRACT);
+      
+      try {
+        // Check verification status on Base Sepolia
+        console.log("Checking Base Sepolia verification...");
+        const isVerifiedOnBaseSepolia = await baseSepoliaContract.isVerified(userAddress);
+        console.log("Base Sepolia verification status:", isVerifiedOnBaseSepolia);
+        
+        // Check if the user is the owner on Base Sepolia
+        const baseSepoliaOwner = await baseSepoliaContract.owner();
+        console.log("Base Sepolia owner:", baseSepoliaOwner);
+        console.log("User address:", userAddress);
+        const isBaseSepoliaOwner = baseSepoliaOwner.toLowerCase() === userAddress.toLowerCase();
+        console.log("Is Base Sepolia owner:", isBaseSepoliaOwner);
+        
+        setBaseSepolia(prev => ({
+          ...prev,
+          isVerified: isVerifiedOnBaseSepolia,
+          isOwner: isBaseSepoliaOwner
+        }));
+      } catch (error) {
+        console.error("Error checking Base Sepolia status:", error);
+      }
+      
+      try {
+        // Check verification status on Ethereum Sepolia
+        console.log("Checking Ethereum Sepolia verification...");
+        const isVerifiedOnEthereumSepolia = await ethereumSepoliaContract.isVerified(userAddress);
+        console.log("Ethereum Sepolia verification status:", isVerifiedOnEthereumSepolia);
+        
+        // Check if the user is the owner on Ethereum Sepolia
+        const ethereumSepoliaOwner = await ethereumSepoliaContract.owner();
+        console.log("Ethereum Sepolia owner:", ethereumSepoliaOwner);
+        const isEthereumSepoliaOwner = ethereumSepoliaOwner.toLowerCase() === userAddress.toLowerCase();
+        console.log("Is Ethereum Sepolia owner:", isEthereumSepoliaOwner);
+        
+        setEthereumSepolia(prev => ({
+          ...prev,
+          isVerified: isVerifiedOnEthereumSepolia,
+          isOwner: isEthereumSepoliaOwner
+        }));
+      } catch (error) {
+        console.error("Error checking Ethereum Sepolia status:", error);
+      }
+      
+      setStatusMessage("");
     } catch (error) {
-      console.error("Error checking Base Sepolia status:", error);
+      console.error("Error in verification check:", error);
+      setStatusMessage("Error checking verification status. Please check console for details.");
+    } finally {
+      setLoading(false);
     }
-    
-    try {
-      // Check verification status on Ethereum Sepolia
-      console.log("Checking Ethereum Sepolia verification...");
-      const isVerifiedOnEthereumSepolia = await ethereumSepoliaContract.isVerified(userAddress);
-      console.log("Ethereum Sepolia verification status:", isVerifiedOnEthereumSepolia);
-      
-      // Check if the user is the owner on Ethereum Sepolia
-      const ethereumSepoliaOwner = await ethereumSepoliaContract.owner();
-      console.log("Ethereum Sepolia owner:", ethereumSepoliaOwner);
-      const isEthereumSepoliaOwner = ethereumSepoliaOwner.toLowerCase() === userAddress.toLowerCase();
-      console.log("Is Ethereum Sepolia owner:", isEthereumSepoliaOwner);
-      
-      setEthereumSepolia(prev => ({
-        ...prev,
-        isVerified: isVerifiedOnEthereumSepolia,
-        isOwner: isEthereumSepoliaOwner
-      }));
-    } catch (error) {
-      console.error("Error checking Ethereum Sepolia status:", error);
-    }
-    
-    setStatusMessage("");
-  } catch (error) {
-    console.error("Error in verification check:", error);
-    setStatusMessage("Error checking verification status. Please check console for details.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Verify a user on Base Sepolia
   const verifyOnBaseSepolia = async (userAddress) => {
@@ -307,7 +308,7 @@ const checkVerificationStatus = async (userAddress) => {
                     symbol: 'ETH',
                     decimals: 18
                   },
-                  rpcUrls: ['https://rpc.sepolia.org'],
+                  rpcUrls: ['https://ethereum-sepolia.publicnode.com'],
                   blockExplorerUrls: ['https://sepolia.etherscan.io/']
                 },
               ],
@@ -323,69 +324,85 @@ const checkVerificationStatus = async (userAddress) => {
   };
 
   // Propagate verification from Base to Ethereum via LayerZero
-  // Propagate verification from Base to Ethereum via LayerZero
-const propagateVerification = async () => {
-  if (!baseSepolia.contract || !baseSepolia.isVerified) {
-    console.log("Can't propagate: contract or verification status issue");
-    return;
-  }
-  
-  // First switch to Base Sepolia network (already done)
-  setLoading(true);
-  setStatusMessage("Propagating verification across chains...");
-  
-  try {
-    console.log("Starting verification propagation");
+  const propagateVerification = async () => {
+    if (!baseSepolia.contract || !baseSepolia.isVerified) {
+      console.log("Can't propagate: contract or verification status issue");
+      return;
+    }
     
-    // We're propagating from Base Sepolia to Ethereum Sepolia
-    const options = "0x"; // Empty options for now
-    console.log("Using options:", options);
+    // Make sure we're on Base Sepolia
+    setLoading(true);
+    setStatusMessage("Propagating verification across chains...");
     
-    // We need to estimate the fee first - using a higher value for testnet
-    const fee = ethers.utils.parseEther("0.005"); // Using higher fee
-    console.log("Using fee:", ethers.utils.formatEther(fee), "ETH");
-    
-    // Make sure we're using a contract instance connected to the current signer
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const connectedContract = new ethers.Contract(
-      BASE_SEPOLIA_CONTRACT,
-      identityPassportABI,
-      signer
-    );
-    
-    console.log("Calling propagateVerification with parameters:");
-    console.log("- Account:", account);
-    console.log("- Destination EID:", ETHEREUM_SEPOLIA_LZ_EID);
-    console.log("- Value:", ethers.utils.formatEther(fee), "ETH");
-    
-    const tx = await connectedContract.propagateVerification(
-      account,
-      ETHEREUM_SEPOLIA_LZ_EID, // Destination endpoint ID
-      options,
-      { value: fee, gasLimit: 1000000 } // Add explicit gas limit
-    );
-    
-    console.log("Transaction sent:", tx.hash);
-    setStatusMessage(`Transaction sent: ${tx.hash}. Waiting for confirmation...`);
-    
-    const receipt = await tx.wait();
-    console.log("Transaction confirmed:", receipt);
-    
-    setStatusMessage("Verification propagation initiated! It may take a few minutes to complete.");
-    
-    // Check after a delay
-    setTimeout(() => {
-      checkVerificationStatus(account);
-    }, 30000); // Check after 30 seconds
-    
-  } catch (error) {
-    console.error("Error propagating verification:", error);
-    setStatusMessage(`Error propagating verification: ${error.message}. Please try again.`);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      console.log("Starting verification propagation");
+      
+      // Setting proper options for LayerZero message - specifying gas for execution
+      // Since we don't have direct access to the OptionsBuilder, we'll use a hex string
+      // that represents 65000 gas for execution
+      const options = "0x00030100110100000000000000000000000000fee0"; // 0xfee0 is hex for 65,000
+      console.log("Using options:", options);
+      
+      // Get a contract instance connected to the current signer
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const connectedContract = new ethers.Contract(
+        BASE_SEPOLIA_CONTRACT,
+        identityPassportABI,
+        signer
+      );
+      
+      try {
+        // Try to get the fee estimation from the contract
+        const feeEstimate = await connectedContract.quotePropagateFee(ETHEREUM_SEPOLIA_LZ_EID, options);
+        console.log("Fee estimation:", feeEstimate);
+        
+        // Add a 20% buffer to the estimated fee
+        const estimatedFee = feeEstimate.nativeFee;
+        const feeWithBuffer = estimatedFee.mul(120).div(100); // 120% of the estimated fee
+        console.log("Using fee with buffer:", ethers.utils.formatEther(feeWithBuffer), "ETH");
+        
+        // Use the estimated fee with buffer
+        var fee = feeWithBuffer;
+      } catch (error) {
+        console.log("Could not estimate fee, using default:", error);
+        // Fallback to a lower default fee if estimation fails
+        const fee = ethers.utils.parseEther("0.002"); // Lower fee
+        console.log("Using default fee:", ethers.utils.formatEther(fee), "ETH");
+      }
+      
+      console.log("Calling propagateVerification with parameters:");
+      console.log("- Account:", account);
+      console.log("- Destination EID:", ETHEREUM_SEPOLIA_LZ_EID);
+      console.log("- Value:", ethers.utils.formatEther(fee), "ETH");
+      
+      const tx = await connectedContract.propagateVerification(
+        account,
+        ETHEREUM_SEPOLIA_LZ_EID, // Destination endpoint ID
+        options,
+        { value: fee, gasLimit: 1000000 } // Add explicit gas limit
+      );
+      
+      console.log("Transaction sent:", tx.hash);
+      setStatusMessage(`Transaction sent: ${tx.hash}. Waiting for confirmation...`);
+      
+      const receipt = await tx.wait();
+      console.log("Transaction confirmed:", receipt);
+      
+      setStatusMessage("Verification propagation initiated! It may take a few minutes to complete.");
+      
+      // Check verification status after a delay
+      setTimeout(() => {
+        checkVerificationStatus(account);
+      }, 30000); // Check after 30 seconds
+      
+    } catch (error) {
+      console.error("Error propagating verification:", error);
+      setStatusMessage(`Error propagating verification: ${error.message}. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // UI rendering
   return (
@@ -419,6 +436,7 @@ const propagateVerification = async () => {
                         .then(() => verifyOnBaseSepolia(account));
                     }}
                     disabled={loading}
+                    className="network-button"
                   >
                     Verify Yourself
                   </button>
@@ -437,6 +455,7 @@ const propagateVerification = async () => {
                         .then(() => verifyOnEthereumSepolia(account));
                     }}
                     disabled={loading}
+                    className="network-button"
                   >
                     Verify Yourself
                   </button>
@@ -445,20 +464,20 @@ const propagateVerification = async () => {
             </div>
             
             <div className="propagation-section">
-  <h2>Cross-Chain Verification</h2>
-  
-  {baseSepolia.isVerified && !ethereumSepolia.isVerified && (
-    <button 
-      onClick={propagateVerification}
-      disabled={loading}
-      className="propagate-button"
-    >
-      Propagate from Base to Ethereum
-    </button>
-  )}
-  
-  <p className="status-message">{statusMessage}</p>
-</div>
+              <h2>Cross-Chain Verification</h2>
+              
+              {baseSepolia.isVerified && !ethereumSepolia.isVerified && (
+                <button 
+                  onClick={propagateVerification}
+                  disabled={loading}
+                  className="propagate-button"
+                >
+                  Propagate from Base to Ethereum
+                </button>
+              )}
+              
+              <p className="status-message">{statusMessage}</p>
+            </div>
           </div>
         )}
       </header>
